@@ -1,27 +1,30 @@
 import time
 
+global melhor_tamanho, melhor_solucao, nos_explorados
+
+melhor_tamanho = -1
+melhor_solucao = []
+nos_explorados = 0
+
 def main():
     problema = ler_problema()
     
-    melhor_tamanho = -1
-    melhor_solucao = []
-    nos_explorados = 0
-
     inicio = time.time()
-    branch_and_bound()
+    branch_and_bound(problema, [])
     fim = time.time()
 
     if melhor_tamanho == -1:
         print("Inviavel")
     else:
-        print("Solucao: ", melhor_solucao)
-        print("Tamanho: ", melhor_tamanho)
+        print("Melhor solucao: ", melhor_solucao)
+        print("Melhor tamanho: ", melhor_tamanho)
         print("Nos explorados: ", nos_explorados)
         print("Tempo: ", fim - inicio)
     
 class Candidato:
-    def __init__(self, grupos):
+    def __init__(self, grupos, id):
         self.grupos = grupos
+        self.id = id
 
 class Problema:
     def __init__(self, num_grupos, num_candidatos, candidatos):
@@ -29,21 +32,47 @@ class Problema:
         self.num_candidatos = num_candidatos
         self.candidatos = candidatos
 
-def branch_and_bound():
-    pass
+def branch_and_bound(problema, E):
+    global melhor_tamanho, melhor_solucao, nos_explorados
+
+    nos_explorados += 1
+
+    if Bdada(problema, E) >= melhor_tamanho and melhor_tamanho != -1:
+        return
+
+    if len(E) == problema.num_grupos:
+        if melhor_tamanho == -1 or len(E) < melhor_tamanho:
+            melhor_tamanho = len(E)
+            melhor_solucao = [candidato.id for candidato in E]
+        return
+
+    for candidato in problema.candidatos:
+        if candidato not in E:
+            E.append(candidato)
+            branch_and_bound(problema, E)
+            E.pop()
+
+def Bdada(problema, E):
+    grupos_representados = set()
+    for candidato in E:
+        for grupo in candidato.grupos:
+            grupos_representados.add(grupo)
+    
+    if len(grupos_representados) == problema.num_grupos:
+        return len(E)
+    else:
+        return len(E) + 1
 
 def ler_problema():
-    num_grupos = int(input())
-    num_candidatos = int(input())
+    num_grupos, num_candidatos = map(int, input().split())
     
     candidatos = []
     for i in range(num_candidatos):
-        c_num_grupos = int(input())
-        c_grupos = []
-        for j in range(c_num_grupos):
-            c_grupos.append(int(input()))
+        dados = input().split()
+        c_num_grupos = int(dados[0])
+        c_grupos = list(map(int, dados[1:]))
 
-        candidatos.append(Candidato(c_grupos))
+        candidatos.append(Candidato(c_grupos, i + 1))
     
     return Problema(num_grupos, num_candidatos, candidatos)
 

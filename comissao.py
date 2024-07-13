@@ -63,15 +63,9 @@ def branch_and_bound(problema, E, args):
         return
 
     for candidato in problema.candidatos:
-        if not args.f:
-            if candidato not in E:
-                E.append(candidato)
-                branch_and_bound(problema, E, args)
-                E.remove(candidato)
-        else:
-            E.append(candidato)
-            branch_and_bound(problema, E, args)
-            E.remove(candidato)
+        E.append(candidato)
+        branch_and_bound(problema, E, args)
+        E.remove(candidato)
 
 def B(problema, E):
     pass

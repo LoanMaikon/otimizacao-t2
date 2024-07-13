@@ -7,10 +7,12 @@ melhor_solucao = []
 nos_explorados = 0
 
 def main():
+    global melhor_tamanho, melhor_solucao, nos_explorados
+
     problema = ler_problema()
     
     inicio = time.time()
-    branch_and_bound(problema, [])
+    branch_and_bound(problema, set())
     fim = time.time()
 
     if melhor_tamanho == -1:
@@ -40,7 +42,7 @@ def branch_and_bound(problema, E):
     if Bdada(problema, E) >= melhor_tamanho and melhor_tamanho != -1:
         return
 
-    if len(E) == problema.num_grupos:
+    if grupos_totalmente_representados(problema, E):
         if melhor_tamanho == -1 or len(E) < melhor_tamanho:
             melhor_tamanho = len(E)
             melhor_solucao = [candidato.id for candidato in E]
@@ -48,9 +50,9 @@ def branch_and_bound(problema, E):
 
     for candidato in problema.candidatos:
         if candidato not in E:
-            E.append(candidato)
+            E.add(candidato)
             branch_and_bound(problema, E)
-            E.pop()
+            E.remove(candidato)
 
 def Bdada(problema, E):
     grupos_representados = set()
@@ -62,6 +64,14 @@ def Bdada(problema, E):
         return len(E)
     else:
         return len(E) + 1
+    
+def grupos_totalmente_representados(problema, E):
+    grupos_representados = set()
+    for candidato in E:
+        for grupo in candidato.grupos:
+            grupos_representados.add(grupo)
+    
+    return len(grupos_representados) == problema.num_grupos
 
 def ler_problema():
     num_grupos, num_candidatos = map(int, input().split())

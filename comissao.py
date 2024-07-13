@@ -79,7 +79,6 @@ def ler_problema():
     candidatos = []
     for i in range(num_candidatos):
         dados = input().split()
-        c_num_grupos = int(dados[0])
         c_grupos = list(map(int, dados[1:]))
 
         candidatos.append(Candidato(c_grupos, i + 1))

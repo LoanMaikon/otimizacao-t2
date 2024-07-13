@@ -1,4 +1,5 @@
 import time
+import argparse
 
 global melhor_tamanho, melhor_solucao, nos_explorados
 
@@ -9,17 +10,18 @@ nos_explorados = 0
 def main():
     global melhor_tamanho, melhor_solucao, nos_explorados
 
+    args = get_args()
+
     problema = ler_problema()
-    
+
     inicio = time.time()
-    branch_and_bound(problema, set())
+    branch_and_bound(problema, [], args)
     fim = time.time()
 
     if melhor_tamanho == -1:
         print("Inviavel")
     else:
         print("Melhor solucao: ", melhor_solucao)
-        print("Melhor tamanho: ", melhor_tamanho)
         print("Nos explorados: ", nos_explorados)
         print("Tempo: ", fim - inicio)
     
@@ -33,14 +35,26 @@ class Problema:
         self.num_grupos = num_grupos
         self.num_candidatos = num_candidatos
         self.candidatos = candidatos
+        self._ordenar_candidatos()
+    
+    def _ordenar_candidatos(self):
+        self.candidatos.sort(key=lambda candidato: len(candidato.grupos), reverse=True)
 
-def branch_and_bound(problema, E):
+def branch_and_bound(problema, E, args):
     global melhor_tamanho, melhor_solucao, nos_explorados
-
     nos_explorados += 1
 
-    if Bdada(problema, E) >= melhor_tamanho and melhor_tamanho != -1:
-        return
+    if not args.f:
+        if len(E) > 1:
+            if E[-1] in E[:-1]:
+                return
+
+    if args.a:
+        if Bdada(problema, E) >= melhor_tamanho and melhor_tamanho != -1:
+            return
+    else:
+        if B(problema, E) >= melhor_tamanho and melhor_tamanho != -1:
+            return
 
     if grupos_totalmente_representados(problema, E):
         if melhor_tamanho == -1 or len(E) < melhor_tamanho:
@@ -49,10 +63,18 @@ def branch_and_bound(problema, E):
         return
 
     for candidato in problema.candidatos:
-        if candidato not in E:
-            E.add(candidato)
-            branch_and_bound(problema, E)
+        if not args.f:
+            if candidato not in E:
+                E.append(candidato)
+                branch_and_bound(problema, E, args)
+                E.remove(candidato)
+        else:
+            E.append(candidato)
+            branch_and_bound(problema, E, args)
             E.remove(candidato)
+
+def B(problema, E):
+    pass
 
 def Bdada(problema, E):
     grupos_representados = set()
@@ -84,6 +106,14 @@ def ler_problema():
         candidatos.append(Candidato(c_grupos, i + 1))
     
     return Problema(num_grupos, num_candidatos, candidatos)
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--f", required=False, action="store_true")
+    parser.add_argument("-o", "--o", required=False, action="store_true")
+    parser.add_argument("-a", "--a", required=False, action="store_true")
+
+    return parser.parse_args()
 
 if __name__ == "__main__":
     main()

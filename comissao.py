@@ -44,9 +44,20 @@ def branch_and_bound(problema, E, args):
     global melhor_tamanho, melhor_solucao, nos_explorados
     nos_explorados += 1
 
+    if len(E) > problema.num_candidatos:
+            return
+
     if not args.f:
         if len(E) > 1:
             if E[-1] in E[:-1]:
+                return
+    
+    if not args.o:
+        if len(E) > 1:
+            set_antes = set(x.id for x in E[:-1])
+            set_depois = set_antes.copy()
+            set_depois.add(E[-1].id)
+            if len(set_antes) == len(set_depois):
                 return
 
     if args.a:

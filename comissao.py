@@ -54,9 +54,15 @@ def branch_and_bound(problema, E, args):
     
     if not args.o:
         if len(E) > 1:
-            set_antes = set(x.id for x in E[:-1])
+            set_antes = set()
+            for candidato in E[:-1]:
+                for grupo in candidato.grupos:
+                    set_antes.add(grupo)
+
             set_depois = set_antes.copy()
-            set_depois.add(E[-1].id)
+            for grupo in E[-1].grupos:
+                set_depois.add(grupo)
+
             if len(set_antes) == len(set_depois):
                 return
 

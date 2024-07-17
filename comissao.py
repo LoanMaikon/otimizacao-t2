@@ -1,22 +1,19 @@
-import time
-import argparse
+from argparse import ArgumentParser
+from time import time
 
-global melhor_tamanho, melhor_solucao, nos_explorados
-
-melhor_tamanho = -1
-melhor_solucao = []
-nos_explorados = 0
 
 def main():
     global melhor_tamanho, melhor_solucao, nos_explorados
+    melhor_tamanho = -1
+    melhor_solucao = []
+    nos_explorados = 0
 
     args = get_args()
-
     problema = ler_problema()
 
-    inicio = time.time()
+    inicio = time()
     branch_and_bound(problema, [], args)
-    fim = time.time()
+    fim = time()
 
     if melhor_tamanho == -1:
         print("Inviavel")
@@ -40,70 +37,61 @@ class Problema:
     def _ordenar_candidatos(self):
         self.candidatos.sort(key=lambda candidato: len(candidato.grupos), reverse=True)
 
-def branch_and_bound(problema, E, args):
+def branch_and_bound(problema: Problema, escolhidos: list, args):
     global melhor_tamanho, melhor_solucao, nos_explorados
     nos_explorados += 1
 
-    if len(E) > problema.num_candidatos:
-            return
+    if len(escolhidos) > problema.num_candidatos:
+        return
 
-    if not args.f:
-        if len(E) > 1:
-            if E[-1] in E[:-1]:
-                return
+    if not args.disable_viability_cuts:
+        if (len(escolhidos) > 1) and (escolhidos[-1] in escolhidos[:-1]):
+            return
     
-    if not args.o:
-        if len(E) > 1:
-            set_antes = set()
-            for candidato in E[:-1]:
-                for grupo in candidato.grupos:
-                    set_antes.add(grupo)
+    if not args.disable_optimality_cuts:
+        if len(escolhidos) > 1:
+            set_antes = {grupo for candidato in escolhidos[:-1] for grupo in candidato.grupos}
 
             set_depois = set_antes.copy()
-            for grupo in E[-1].grupos:
+            for grupo in escolhidos[-1].grupos:
                 set_depois.add(grupo)
 
             if len(set_antes) == len(set_depois):
                 return
 
-    if args.a:
-        if Bdada(problema, E) >= melhor_tamanho and melhor_tamanho != -1:
+    if args.use_default_function:
+        if (B(problema, escolhidos) >= melhor_tamanho) and (melhor_tamanho != -1):
             return
     else:
-        if B(problema, E) >= melhor_tamanho and melhor_tamanho != -1:
+        if (Bdada(problema, escolhidos) >= melhor_tamanho) and (melhor_tamanho != -1):
             return
 
-    if grupos_totalmente_representados(problema, E):
-        if melhor_tamanho == -1 or len(E) < melhor_tamanho:
-            melhor_tamanho = len(E)
-            melhor_solucao = [candidato.id for candidato in E]
+    if solucao_viavel(problema, escolhidos):
+        if (len(escolhidos) < melhor_tamanho) or (melhor_tamanho == -1):
+            melhor_tamanho = len(escolhidos)
+            melhor_solucao = [candidato.id for candidato in escolhidos]
         return
 
     for candidato in problema.candidatos:
-        E.append(candidato)
-        branch_and_bound(problema, E, args)
-        E.remove(candidato)
+        escolhidos.append(candidato)
+        branch_and_bound(problema, escolhidos, args)
+        escolhidos.pop()
 
-def B(problema, E):
-    pass
+def B(problema, escolhidos):
+    ## ideia: verificar se o conjunto dos grupos nao escolhidos ainda eh igual ou esta contido no grupo dos conjuntos dos candidatos ainda nao escolhidos
+    print('Default branching function not set')
+    exit()
 
-def Bdada(problema, E):
-    grupos_representados = set()
-    for candidato in E:
-        for grupo in candidato.grupos:
-            grupos_representados.add(grupo)
-    
+def Bdada(problema, escolhidos):
+    grupos_representados = {grupo for candidato in escolhidos for grupo in candidato.grupos}
+
     if len(grupos_representados) == problema.num_grupos:
-        return len(E)
+        return len(escolhidos)
     else:
-        return len(E) + 1
+        return len(escolhidos) + 1
     
-def grupos_totalmente_representados(problema, E):
-    grupos_representados = set()
-    for candidato in E:
-        for grupo in candidato.grupos:
-            grupos_representados.add(grupo)
-    
+def solucao_viavel(problema, escolhidos):
+    grupos_representados = {grupo for candidato in escolhidos for grupo in candidato.grupos}
     return len(grupos_representados) == problema.num_grupos
 
 def ler_problema():
@@ -119,10 +107,16 @@ def ler_problema():
     return Problema(num_grupos, num_candidatos, candidatos)
 
 def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--f", required=False, action="store_true")
-    parser.add_argument("-o", "--o", required=False, action="store_true")
-    parser.add_argument("-a", "--a", required=False, action="store_true")
+    parser = ArgumentParser()
+    parser.add_argument("-f", "--f", action="store_true",
+                        dest="disable_viability_cuts",
+                        help="Desativa os cortes de viabilidade")
+    parser.add_argument("-o", "--o", action="store_true",
+                        dest="disable_optimality_cuts",
+                        help="Desativa os cortes de otimalidade")
+    parser.add_argument("-a", "--a", action="store_false",
+                        dest="use_default_function",
+                        help="Usa a funcao limitante do professor")
 
     return parser.parse_args()
 

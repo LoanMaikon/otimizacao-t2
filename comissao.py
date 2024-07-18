@@ -77,22 +77,40 @@ def branch_and_bound(problema: Problema, escolhidos: list, args):
         branch_and_bound(problema, escolhidos, args)
         escolhidos.pop()
 
-def B(problema, escolhidos):
-    ## ideia: verificar se o conjunto dos grupos nao escolhidos ainda eh igual ou esta contido no grupo dos conjuntos dos candidatos ainda nao escolhidos
-    print('Default branching function not set')
-    exit()
-
-def Bdada(problema, escolhidos):
-    grupos_representados = {grupo for candidato in escolhidos for grupo in candidato.grupos}
+def B(problema, E):
+    grupos_representados = get_grupos_representados(problema, E)
 
     if len(grupos_representados) == problema.num_grupos:
-        return len(escolhidos)
-    else:
-        return len(escolhidos) + 1
+        return len(E)
     
+    grupos_faltantes = set([i for i in range(1, problema.num_grupos + 1)]) - grupos_representados
+
+    F = set(problema.candidatos) - set(E)
+    len_p_1 = False
+    for candidato in F:
+        if len(set(candidato.grupos) & grupos_faltantes) == len(grupos_faltantes):
+            len_p_1 = True
+
+    if len_p_1:
+        return len(E) + 1
+    return len(E) + 2
+    
+def Bdada(problema, E):
+    if solucao_viavel(problema, E):
+        return len(E)
+    return len(E) + 1
+
 def solucao_viavel(problema, escolhidos):
-    grupos_representados = {grupo for candidato in escolhidos for grupo in candidato.grupos}
+    grupos_representados = get_grupos_representados(problema, escolhidos)
     return len(grupos_representados) == problema.num_grupos
+    
+def get_grupos_representados(problema, E):
+    grupos_representados = set()
+    for candidato in E:
+        for grupo in candidato.grupos:
+            grupos_representados.add(grupo)
+    
+    return grupos_representados
 
 def ler_problema():
     num_grupos, num_candidatos = map(int, input().split())
